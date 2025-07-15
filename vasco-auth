@@ -1,0 +1,38 @@
+server default {
+
+listen {
+    type = auth
+    ipaddr = *
+    port = 1812
+}
+
+listen {
+    type = acct
+    ipaddr = *
+    port = 1813
+}
+
+authorize {
+    python3
+    if (ok) {
+        update control {
+            Auth-Type := Python3
+        }
+    }
+}
+
+authenticate {
+    Auth-Type Python3 {
+        python3
+    }
+}
+
+post-auth {
+    python3
+}
+
+accounting {
+    python3
+}
+
+}

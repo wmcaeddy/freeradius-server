@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  freeradius-simple:
+    image: freeradius/freeradius-server:latest
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    environment:
+      - RADIUS_CLIENT_SECRET=testing123
+    volumes:
+      - ./test-config:/etc/freeradius/3.0
+      - ./test-scripts:/opt/test-scripts
+    networks:
+      - radius-network
+    command: ["freeradius", "-f", "-d", "/etc/freeradius/3.0", "-l", "stdout"]
+
+  test-client:
+    image: ubuntu:22.04
+    depends_on:
+      - freeradius-simple
+    volumes:
+      - ./test-scripts:/opt/test-scripts
+    networks:
+      - radius-network
+    command: ["sleep", "3600"]
+
+networks:
+  radius-network:
+    driver: bridge

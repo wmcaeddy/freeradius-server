@@ -1,0 +1,25 @@
+python3 {
+	python_path = "${modconfdir}/${.:name}:/etc/freeradius/3.0/mods-config/python3"
+	module = radius_auth_module
+
+	mod_instantiate = ${.module}
+	func_instantiate = instantiate
+
+	mod_detach = ${.module}  
+	func_detach = detach
+
+	mod_authorize = ${.module}
+	func_authorize = authorize
+
+	mod_authenticate = ${.module}
+	func_authenticate = authenticate
+
+	mod_preacct = ${.module}
+	func_preacct = preacct
+
+	mod_accounting = ${.module}
+	func_accounting = accounting
+
+	mod_post_auth = ${.module}
+	func_post_auth = post_auth
+}
