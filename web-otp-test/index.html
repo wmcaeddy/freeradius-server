@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RADIUS OTP Authentication Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .otp-input {
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 8px;
+            font-family: monospace;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .token-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .token-info h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .demo-users {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .demo-user {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .demo-user:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+        
+        .demo-user .username {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .demo-user .token-type {
+            font-size: 12px;
+            color: #666;
+            background: #f1f3f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .current-token {
+            font-family: monospace;
+            font-size: 20px;
+            color: #667eea;
+            letter-spacing: 2px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .refresh-btn {
+            background: #6c757d;
+            font-size: 14px;
+            padding: 8px 16px;
+            margin-top: 15px;
+        }
+        
+        .external-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .external-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 RADIUS OTP Test</h1>
+            <p>Test FreeRADIUS authentication with OTP tokens</p>
+        </div>
+        
+        <form id="authForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <select id="username" required>
+                    <option value="">Select a user...</option>
+                    <option value="demo">demo (HOTP)</option>
+                    <option value="vasco_demo">vasco_demo (TOTP)</option>
+                    <option value="testuser">testuser (HOTP)</option>
+                    <option value="custom">Custom username...</option>
+                </select>
+                <input type="text" id="customUsername" placeholder="Enter custom username" style="display: none; margin-top: 10px;">
+            </div>
+            
+            <div class="form-group">
+                <label for="otp">OTP Token</label>
+                <input type="text" 
+                       id="otp" 
+                       class="otp-input" 
+                       placeholder="000000" 
+                       maxlength="6" 
+                       pattern="[0-9]{6}" 
+                       required
+                       autocomplete="off">
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                Authenticate
+            </button>
+        </form>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="token-info">
+            <h3>📱 Current Demo Tokens</h3>
+            <div class="demo-users" id="demoTokens">
+                <div class="demo-user">
+                    <div>
+                        <div class="username">Loading...</div>
+                    </div>
+                    <div class="current-token">------</div>
+                </div>
+            </div>
+            <button class="refresh-btn" onclick="refreshTokens()">🔄 Refresh Tokens</button>
+        </div>
+        
+        <a href="https://gs.onespan.cloud/te-demotokens/go6" target="_blank" class="external-link">
+            🌐 Visit Vasco Demo Tokens →
+        </a>
+    </div>
+    
+    <script>
+        const form = document.getElementById('authForm');
+        const usernameSelect = document.getElementById('username');
+        const customUsernameInput = document.getElementById('customUsername');
+        const otpInput = document.getElementById('otp');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultDiv = document.getElementById('result');
+        const demoTokensDiv = document.getElementById('demoTokens');
+        
+        // Handle username selection
+        usernameSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                customUsernameInput.style.display = 'block';
+                customUsernameInput.required = true;
+            } else {
+                customUsernameInput.style.display = 'none';
+                customUsernameInput.required = false;
+                customUsernameInput.value = '';
+            }
+        });
+        
+        // Format OTP input
+        otpInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+        });
+        
+        // Click on demo user to autofill
+        function selectDemoUser(username, token) {
+            usernameSelect.value = username;
+            otpInput.value = token;
+            customUsernameInput.style.display = 'none';
+            otpInput.focus();
+        }
+        
+        // Refresh tokens
+        async function refreshTokens() {
+            demoTokensDiv.innerHTML = '<div class="demo-user"><div class="username">Loading...</div><div class="loading"></div></div>';
+            
+            try {
+                const response = await fetch('/api/tokens');
+                const data = await response.json();
+                
+                demoTokensDiv.innerHTML = '';
+                
+                Object.entries(data.tokens).forEach(([username, token]) => {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'demo-user';
+                    userDiv.onclick = () => selectDemoUser(username, token);
+                    userDiv.innerHTML = `
+                        <div>
+                            <div class="username">${username}</div>
+                            <span class="token-type">${data.users[username].type.toUpperCase()}</span>
+                        </div>
+                        <div class="current-token">${token}</div>
+                    `;
+                    demoTokensDiv.appendChild(userDiv);
+                });
+            } catch (error) {
+                demoTokensDiv.innerHTML = '<div class="demo-user"><div class="username">Error loading tokens</div></div>';
+            }
+        }
+        
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameSelect.value === 'custom' 
+                ? customUsernameInput.value 
+                : usernameSelect.value;
+            const otp = otpInput.value;
+            
+            if (!username || !otp) {
+                showResult('Please enter both username and OTP', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Authenticating... <span class="loading"></span>';
+            
+            try {
+                const response = await fetch('/api/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, otp })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult(`✅ Authentication successful for ${username}!`, 'success');
+                    otpInput.value = '';
+                } else {
+                    showResult(`❌ Authentication failed: ${data.message || 'Invalid OTP'}`, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Error connecting to server', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Authenticate';
+            }
+        });
+        
+        function showResult(message, type) {
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Load tokens on page load
+        refreshTokens();
+        
+        // Auto-refresh tokens every 30 seconds
+        setInterval(refreshTokens, 30000);
+    </script>
+</body>
+</html>

@@ -11,11 +11,17 @@ import os
 sys.path.insert(0, '/etc/freeradius/3.0/mods-config/python3')
 
 try:
-    from vasco_token_auth import VascoTokenAuth
-    auth = VascoTokenAuth()
+    from go6_token_auth import GO6TokenAuth
+    auth = GO6TokenAuth()
+    radiusd.radlog(radiusd.L_INFO, "GO6 Token Auth module loaded successfully")
 except ImportError as e:
-    radiusd.radlog(radiusd.L_ERR, f"Failed to import VascoTokenAuth: {e}")
-    auth = None
+    try:
+        from vasco_token_auth import VascoTokenAuth
+        auth = VascoTokenAuth()
+        radiusd.radlog(radiusd.L_INFO, "Vasco Token Auth module loaded successfully")
+    except ImportError as e2:
+        radiusd.radlog(radiusd.L_ERR, f"Failed to import token auth modules: {e}, {e2}")
+        auth = None
 
 def instantiate(p):
     """Module instantiation"""
