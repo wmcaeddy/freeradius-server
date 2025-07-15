@@ -123,9 +123,6 @@ RUN chmod +x /railway-start.sh
 # Expose ports
 EXPOSE 80 443 1812/udp 1813/udp 18120/tcp 11812/udp 11813/udp
 
-# Volume for persistent data
-VOLUME ["/app/data"]
-
 # Set working directory
 WORKDIR /usr/local/etc/raddb
 
