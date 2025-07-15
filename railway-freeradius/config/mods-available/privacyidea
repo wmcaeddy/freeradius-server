@@ -1,30 +1,12 @@
-# PrivacyIDEA authentication module configuration
-# This module integrates FreeRADIUS with PrivacyIDEA for token validation
+# Simple Token authentication module configuration
+# This module provides basic HOTP token validation
 
-python3 privacyidea {
+python3 simple_token_auth {
     # Path to the Python module
-    module = privacyidea_auth
+    module = simple_token_auth
     
     # Python path (if needed)
     python_path = /usr/share/freeradius
-    
-    # Module configuration passed to Python
-    config {
-        # PrivacyIDEA server URL
-        privacyidea_url = ${PRIVACYIDEA_URL}
-        
-        # SSL certificate validation
-        validate_ssl = ${PRIVACYIDEA_VALIDATE_SSL}
-        
-        # Default realm (optional)
-        realm = ${PRIVACYIDEA_REALM}
-        
-        # Request timeout in seconds
-        timeout = 10
-        
-        # Enable debug logging
-        debug = ${PRIVACYIDEA_DEBUG}
-    }
     
     # FreeRADIUS module methods
     mod_instantiate = ${.module}

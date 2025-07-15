@@ -19,17 +19,17 @@ server privacyidea {
             reject
         }
         
-        # Set Auth-Type to use PrivacyIDEA
+        # Set Auth-Type to use simple token auth
         update control {
-            Auth-Type := privacyidea
+            Auth-Type := simple_token_auth
         }
     }
     
     # Authentication section
     authenticate {
-        # Use PrivacyIDEA module for authentication
-        Auth-Type privacyidea {
-            privacyidea
+        # Use simple token auth module for authentication
+        Auth-Type simple_token_auth {
+            simple_token_auth
         }
     }
     
