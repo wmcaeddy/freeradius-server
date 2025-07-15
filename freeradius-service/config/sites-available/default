@@ -1,0 +1,76 @@
+# Default virtual server for FreeRADIUS with PrivacyIDEA integration
+
+server default {
+    # Listen on auth port
+    listen {
+        type = auth
+        ipaddr = *
+        port = 1812
+    }
+    
+    # Listen on accounting port
+    listen {
+        type = acct
+        ipaddr = *
+        port = 1813
+    }
+    
+    # Authorization section
+    authorize {
+        # Ensure User-Name exists
+        filter_username
+        
+        # Check for required attributes
+        if (!&User-Name) {
+            reject
+        }
+        
+        # Log the authentication attempt
+        linelog
+        
+        # Set Auth-Type to use PrivacyIDEA
+        update control {
+            Auth-Type := privacyidea_client
+        }
+    }
+    
+    # Authentication section
+    authenticate {
+        # Use PrivacyIDEA client module for authentication
+        Auth-Type privacyidea_client {
+            privacyidea_client
+        }
+    }
+    
+    # Post-authentication section
+    post-auth {
+        # Log successful authentications
+        linelog
+        
+        # Handle rejected authentications
+        Post-Auth-Type REJECT {
+            linelog
+        }
+    }
+    
+    # Pre-accounting section
+    preacct {
+        preprocess
+        acct_unique
+        
+        # Log accounting request
+        linelog
+    }
+    
+    # Accounting section
+    accounting {
+        # Log accounting data
+        detail
+        
+        # Update accounting log
+        linelog
+        
+        # Store in SQL if configured
+        -sql
+    }
+}

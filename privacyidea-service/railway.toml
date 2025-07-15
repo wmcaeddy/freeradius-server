@@ -1,0 +1,40 @@
+# Railway.com deployment configuration for PrivacyIDEA service
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "privacyidea-service/Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Health check configuration
+[[deploy.healthcheck]]
+type = "HTTP"
+path = "/health"
+port = 80
+interval = 30
+timeout = 10
+retries = 3
+
+# Persistent volume for PrivacyIDEA data
+[[volumes]]
+name = "privacyidea-data"
+mountPath = "/app/data"
+
+# Environment variables
+[env]
+# PrivacyIDEA Server Configuration
+PI_SECRET_KEY = "${{PI_SECRET_KEY}}"
+PI_PEPPER = "${{PI_PEPPER}}"
+PI_ADMIN_PASSWORD = "${{PI_ADMIN_PASSWORD}}"
+DATABASE_URL = "${{DATABASE_URL}}"
+REDIS_URL = "${{REDIS_URL}}"
+VASCO_ENABLED = "true"
+
+# Service configuration
+[[services]]
+name = "privacyidea-web"
+type = "HTTP"
+port = 80

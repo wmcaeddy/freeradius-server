@@ -1,0 +1,51 @@
+# Railway.com deployment configuration for FreeRADIUS service
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "freeradius-service/Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Health check configuration
+[[deploy.healthcheck]]
+type = "TCP"
+port = 1812
+interval = 30
+timeout = 5
+retries = 3
+
+# Persistent volume for FreeRADIUS data
+[[volumes]]
+name = "freeradius-data"
+mountPath = "/app/data"
+
+# Environment variables
+[env]
+# PrivacyIDEA Service Connection
+PRIVACYIDEA_URL = "${{PRIVACYIDEA_URL}}"
+PRIVACYIDEA_VALIDATE_SSL = "true"
+PRIVACYIDEA_REALM = "default"
+PRIVACYIDEA_DEBUG = "false"
+PRIVACYIDEA_TIMEOUT = "30"
+
+# RADIUS Configuration
+RADIUS_CLIENT_SECRET = "${{RADIUS_CLIENT_SECRET}}"
+
+# Service configuration
+[[services]]
+name = "radius-auth"
+type = "UDP"
+port = 1812
+
+[[services]]
+name = "radius-acct"
+type = "UDP"
+port = 1813
+
+[[services]]
+name = "radius-status"
+type = "TCP"
+port = 18120

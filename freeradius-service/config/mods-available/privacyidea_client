@@ -1,0 +1,39 @@
+# PrivacyIDEA client module configuration
+# This module connects to the separate PrivacyIDEA service
+
+python3 privacyidea_client {
+    # Path to the Python module
+    module = privacyidea_client
+    
+    # Python path
+    python_path = /usr/share/freeradius
+    
+    # Module configuration
+    config {
+        # PrivacyIDEA service URL (Railway service URL)
+        privacyidea_url = ${PRIVACYIDEA_URL}
+        
+        # SSL certificate validation
+        validate_ssl = ${PRIVACYIDEA_VALIDATE_SSL}
+        
+        # Default realm
+        realm = ${PRIVACYIDEA_REALM}
+        
+        # Request timeout in seconds
+        timeout = 30
+        
+        # Enable debug logging
+        debug = ${PRIVACYIDEA_DEBUG}
+    }
+    
+    # FreeRADIUS module methods
+    mod_instantiate = ${.module}
+    mod_detach = ${.module}
+    mod_authorize = ${.module}
+    mod_authenticate = ${.module}
+    mod_preacct = ${.module}
+    mod_accounting = ${.module}
+    mod_pre_proxy = ${.module}
+    mod_post_proxy = ${.module}
+    mod_post_auth = ${.module}
+}
