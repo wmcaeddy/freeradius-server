@@ -42,11 +42,11 @@ RUN pip3 install --upgrade pip setuptools wheel && \
     pip3 install gunicorn redis psycopg2-binary mysqlclient
 
 # Copy configuration files
-COPY config/pi.cfg /etc/privacyidea/pi.cfg
-COPY config/gunicorn.conf.py /etc/privacyidea/gunicorn.conf.py
-COPY nginx/privacyidea.conf /etc/nginx/sites-available/privacyidea
-COPY init/init-privacyidea.sh /usr/local/bin/init-privacyidea.sh
-COPY init/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY railway-freeradius/privacyidea/config/pi.cfg /etc/privacyidea/pi.cfg
+COPY railway-freeradius/privacyidea/config/gunicorn.conf.py /etc/privacyidea/gunicorn.conf.py
+COPY railway-freeradius/privacyidea/nginx/privacyidea.conf /etc/nginx/sites-available/privacyidea
+COPY railway-freeradius/privacyidea/init/init-privacyidea.sh /usr/local/bin/init-privacyidea.sh
+COPY railway-freeradius/privacyidea/init/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Configure nginx
 RUN rm -f /etc/nginx/sites-enabled/default && \
@@ -69,7 +69,7 @@ VOLUME ["/app/data"]
 WORKDIR /opt/privacyidea
 
 # Entry point script
-COPY init/docker-entrypoint.sh /docker-entrypoint.sh
+COPY railway-freeradius/privacyidea/init/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 # Start supervisor
