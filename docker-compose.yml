@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  privacyidea:
+    build:
+      context: .
+      dockerfile: privacyidea-service/Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - PI_SECRET_KEY=local-development-secret-key-12345
+      - PI_PEPPER=local-development-pepper-67890
+      - PI_ADMIN_PASSWORD=admin123
+      - VASCO_ENABLED=true
+    volumes:
+      - privacyidea-data:/app/data
+    networks:
+      - freeradius-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  freeradius:
+    build:
+      context: .
+      dockerfile: freeradius-service/Dockerfile
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+      - "18120:18120"
+    environment:
+      - PRIVACYIDEA_URL=http://privacyidea:80
+      - PRIVACYIDEA_VALIDATE_SSL=false
+      - PRIVACYIDEA_REALM=default
+      - PRIVACYIDEA_DEBUG=true
+      - PRIVACYIDEA_TIMEOUT=30
+      - RADIUS_CLIENT_SECRET=testing123
+    volumes:
+      - freeradius-data:/app/data
+    depends_on:
+      privacyidea:
+        condition: service_healthy
+    networks:
+      - freeradius-network
+    healthcheck:
+      test: ["CMD", "echo", "Message-Authenticator = 0x00", "|", "radclient", "-x", "localhost:18120", "status", "adminsecret"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  privacyidea-data:
+    driver: local
+  freeradius-data:
+    driver: local
+
+networks:
+  freeradius-network:
+    driver: bridge
