@@ -6,7 +6,7 @@ python3 privacyidea {
     module = privacyidea_auth
     
     # Python path (if needed)
-    python_path = /usr/local/share/freeradius
+    python_path = /usr/share/freeradius
     
     # Module configuration passed to Python
     config {

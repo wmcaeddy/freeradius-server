@@ -52,21 +52,21 @@ python3 /usr/local/bin/setup-demo-tokens.py || log "Demo token setup failed (thi
 
 # Configure FreeRADIUS
 log "Configuring FreeRADIUS..."
-chown -R freerad:freerad /usr/local/etc/raddb /app/data /var/log/radius /var/run/radiusd
+chown -R freerad:freerad /etc/freeradius /app/data /var/log/freeradius /var/run/freeradius
 
 # Enable required modules
-cd /usr/local/etc/raddb/mods-enabled
+cd /etc/freeradius/3.0/mods-enabled
 ln -sf ../mods-available/privacyidea privacyidea 2>/dev/null || true
 ln -sf ../mods-available/python3 python3 2>/dev/null || true
 
 # Enable sites
-cd /usr/local/etc/raddb/sites-enabled
+cd /etc/freeradius/3.0/sites-enabled
 ln -sf ../sites-available/privacyidea privacyidea 2>/dev/null || true
 
 # Test configuration
 log "Testing FreeRADIUS configuration..."
-runuser -u freerad -- radiusd -C -d /usr/local/etc/raddb
+runuser -u freerad -- freeradius -C -d /etc/freeradius/3.0
 
 # Start FreeRADIUS
 log "Starting FreeRADIUS..."
-exec runuser -u freerad -- radiusd -f -d /usr/local/etc/raddb
+exec runuser -u freerad -- freeradius -f -d /etc/freeradius/3.0

@@ -5,7 +5,7 @@
 python3 proxy_loadbalance {
     module = proxy_loadbalance
     
-    python_path = /usr/local/share/freeradius
+    python_path = /usr/share/freeradius
     
     config {
         # Backend servers configuration
