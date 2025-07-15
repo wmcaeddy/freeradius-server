@@ -1,0 +1,24 @@
+# Custom proxy module for "first positive response wins" logic
+# This module handles the special case where we want to accept
+# if ANY backend server returns Access-Accept
+
+python3 proxy_loadbalance {
+    module = proxy_loadbalance
+    
+    python_path = /usr/local/share/freeradius
+    
+    config {
+        # Backend servers configuration
+        backends = ${PROXY_BACKENDS}
+        
+        # Timeout for each backend (seconds)
+        timeout = 5
+        
+        # Whether to try all backends in parallel
+        parallel = yes
+    }
+    
+    mod_instantiate = ${.module}
+    mod_authorize = ${.module}
+    mod_authenticate = ${.module}
+}

@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # PrivacyIDEA Authentication Server
+  privacyidea:
+    build:
+      context: ./privacyidea
+      dockerfile: Dockerfile
+    container_name: privacyidea
+    environment:
+      - PI_SECRET_KEY=${PI_SECRET_KEY:-your-secret-key-here}
+      - PI_PEPPER=${PI_PEPPER:-your-pepper-here}
+      - PI_ADMIN_PASSWORD=${PI_ADMIN_PASSWORD:-admin}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - REDIS_URL=${REDIS_URL:-}
+      - VASCO_ENABLED=${VASCO_ENABLED:-true}
+    ports:
+      - "80:80"     # HTTP
+      - "443:443"   # HTTPS
+    volumes:
+      - privacyidea-data:/app/data
+    networks:
+      - radius-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Primary FreeRADIUS with PrivacyIDEA
+  freeradius-privacyidea:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freeradius-privacyidea
+    environment:
+      - PRIVACYIDEA_URL=${PRIVACYIDEA_URL:-http://privacyidea:80}
+      - PRIVACYIDEA_VALIDATE_SSL=${PRIVACYIDEA_VALIDATE_SSL:-false}
+      - PRIVACYIDEA_REALM=${PRIVACYIDEA_REALM:-default}
+      - PRIVACYIDEA_DEBUG=${PRIVACYIDEA_DEBUG:-false}
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET:-testing123}
+    ports:
+      - "1812:1812/udp"  # Authentication
+      - "1813:1813/udp"  # Accounting
+      - "18120:18120"    # Status
+    volumes:
+      - radius-data:/app/data
+      - ./config:/usr/local/etc/raddb:ro
+      - ./scripts:/usr/local/share/freeradius:ro
+    networks:
+      - radius-net
+    depends_on:
+      - privacyidea
+    healthcheck:
+      test: ["CMD", "radtest", "test", "test", "localhost", "0", "testing123"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # FreeRADIUS Proxy Instance
+  freeradius-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freeradius-proxy
+    environment:
+      - BACKEND1_HOST=${BACKEND1_HOST:-freeradius-privacyidea}
+      - BACKEND1_SECRET=${BACKEND1_SECRET:-testing123}
+      - BACKEND2_HOST=${BACKEND2_HOST:-freeradius-privacyidea}
+      - BACKEND2_SECRET=${BACKEND2_SECRET:-testing123}
+      - PROXY_BACKENDS=${PROXY_BACKENDS}
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET:-testing123}
+    ports:
+      - "11812:11812/udp"  # Proxy Authentication
+      - "11813:11813/udp"  # Proxy Accounting
+    volumes:
+      - proxy-data:/app/data
+      - ./config:/usr/local/etc/raddb:ro
+      - ./scripts:/usr/local/share/freeradius:ro
+    networks:
+      - radius-net
+    depends_on:
+      - privacyidea
+      - freeradius-privacyidea
+
+volumes:
+  privacyidea-data:
+  radius-data:
+  proxy-data:
+
+networks:
+  radius-net:
+    driver: bridge

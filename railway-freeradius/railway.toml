@@ -1,0 +1,65 @@
+# Railway.com deployment configuration
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "./Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Health check configuration
+[[deploy.healthcheck]]
+type = "TCP"
+port = 1812
+interval = 30
+timeout = 5
+retries = 3
+
+# Persistent volume for /app/data
+[[volumes]]
+name = "freeradius-data"
+mountPath = "/app/data"
+
+# Environment variables
+[env]
+# PrivacyIDEA Configuration
+PRIVACYIDEA_URL = "https://your-privacyidea-server.com"
+PRIVACYIDEA_VALIDATE_SSL = "true"
+PRIVACYIDEA_REALM = ""
+PRIVACYIDEA_DEBUG = "false"
+PRIVACYIDEA_TIMEOUT = "10"
+
+# RADIUS Client Secret (for clients connecting to this server)
+RADIUS_CLIENT_SECRET = "${{SECRET_RADIUS_CLIENT_SECRET}}"
+
+# Backend servers for proxy configuration
+BACKEND1_HOST = "localhost"
+BACKEND1_SECRET = "${{SECRET_BACKEND1_SECRET}}"
+BACKEND2_HOST = "your-second-radius-server.com"
+BACKEND2_SECRET = "${{SECRET_BACKEND2_SECRET}}"
+
+# Proxy backends configuration (JSON array)
+PROXY_BACKENDS = '[{"name":"privacyidea","host":"localhost","port":1812,"secret":"${{SECRET_BACKEND1_SECRET}}"},{"name":"secondary","host":"your-second-radius-server.com","port":1812,"secret":"${{SECRET_BACKEND2_SECRET}}"}]'
+
+# Service configuration
+[[services]]
+name = "radius-auth"
+type = "UDP"
+port = 1812
+
+[[services]]
+name = "radius-acct"
+type = "UDP"
+port = 1813
+
+[[services]]
+name = "radius-proxy-auth"
+type = "UDP"
+port = 11812
+
+[[services]]
+name = "radius-proxy-acct"
+type = "UDP"
+port = 11813

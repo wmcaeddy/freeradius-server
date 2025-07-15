@@ -1,0 +1,169 @@
+# RADIUS Proxy Configuration
+# Routes requests to multiple backend servers with failover
+# First positive response wins
+
+server proxy {
+    # Listen for authentication requests
+    listen {
+        type = auth
+        ipaddr = *
+        port = 11812  # Different port for proxy
+    }
+    
+    # Listen for accounting requests
+    listen {
+        type = acct
+        ipaddr = *
+        port = 11813  # Different port for proxy
+    }
+    
+    # Pre-proxy section - before sending to home server
+    pre-proxy {
+        # Log the proxy request
+        linelog
+        
+        # Ensure required attributes exist
+        if (!&User-Name) {
+            reject
+        }
+        
+        # Mark the packet for proxying
+        update control {
+            Proxy-To-Realm := "proxy-loadbalance"
+        }
+    }
+    
+    # Authorization section
+    authorize {
+        # Ensure User-Name exists
+        filter_username
+        
+        # Check which backend to use based on username pattern or realm
+        if (&User-Name =~ /^vasco_/) {
+            update control {
+                Proxy-To-Realm := "vasco-backend"
+            }
+        }
+        elsif (&Realm) {
+            update control {
+                Proxy-To-Realm := "%{Realm}"
+            }
+        }
+        else {
+            # Default to load-balanced proxy
+            update control {
+                Proxy-To-Realm := "proxy-loadbalance"
+            }
+        }
+    }
+    
+    # Authentication section
+    authenticate {
+        # Proxy requests are handled automatically
+    }
+    
+    # Post-proxy section - after receiving response from home server
+    post-proxy {
+        # Log the response
+        linelog
+        
+        # Handle failures
+        Post-Proxy-Type Fail-Authentication {
+            # If first backend fails, we'll automatically try the next
+            linelog
+        }
+    }
+    
+    # Post-authentication
+    post-auth {
+        # Log successful proxy authentications
+        linelog
+        
+        Post-Auth-Type REJECT {
+            # Log failed authentications
+            linelog
+        }
+    }
+    
+    # Accounting
+    accounting {
+        # Proxy accounting requests
+        detail
+    }
+}
+
+# Define home servers (backend RADIUS servers)
+home_server privacyidea_primary {
+    type = auth+acct
+    ipaddr = ${BACKEND1_HOST}
+    port = 1812
+    secret = ${BACKEND1_SECRET}
+    
+    # Connection parameters
+    response_window = 5
+    zombie_period = 40
+    status_check = status-server
+    check_interval = 30
+    check_timeout = 4
+    num_answers_to_alive = 3
+    
+    # Mark-up for load balancing
+    weight = 10
+}
+
+home_server backend_secondary {
+    type = auth+acct
+    ipaddr = ${BACKEND2_HOST}
+    port = 1812
+    secret = ${BACKEND2_SECRET}
+    
+    # Connection parameters
+    response_window = 5
+    zombie_period = 40
+    status_check = status-server
+    check_interval = 30
+    check_timeout = 4
+    num_answers_to_alive = 3
+    
+    # Mark-up for load balancing
+    weight = 10
+}
+
+# Define server pools
+home_server_pool vasco_pool {
+    type = fail-over  # Try servers in order until one responds OK
+    
+    # PrivacyIDEA server for Vasco tokens
+    home_server = privacyidea_primary
+}
+
+home_server_pool loadbalance_pool {
+    type = load-balance  # Distribute load across servers
+    
+    # Both backends in the pool
+    home_server = privacyidea_primary
+    home_server = backend_secondary
+}
+
+home_server_pool failover_any_accept {
+    type = client-port-balance  # Special: accept if ANY server returns Access-Accept
+    
+    home_server = privacyidea_primary
+    home_server = backend_secondary
+}
+
+# Define realms for proxying
+realm vasco-backend {
+    auth_pool = vasco_pool
+}
+
+realm proxy-loadbalance {
+    auth_pool = failover_any_accept
+    nostrip  # Don't strip the realm from username
+}
+
+# Default realm for unmatched requests
+realm DEFAULT {
+    auth_pool = failover_any_accept
+    nostrip
+}

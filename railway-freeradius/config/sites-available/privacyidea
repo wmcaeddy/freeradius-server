@@ -1,0 +1,63 @@
+# Virtual server for PrivacyIDEA authentication
+# Handles authentication requests using PrivacyIDEA tokens
+
+server privacyidea {
+    # Listen on auth port
+    listen {
+        type = auth
+        ipaddr = *
+        port = 1812
+    }
+    
+    # Authorization section
+    authorize {
+        # Ensure User-Name exists
+        filter_username
+        
+        # Check for required attributes
+        if (!&User-Name) {
+            reject
+        }
+        
+        # Set Auth-Type to use PrivacyIDEA
+        update control {
+            Auth-Type := privacyidea
+        }
+    }
+    
+    # Authentication section
+    authenticate {
+        # Use PrivacyIDEA module for authentication
+        Auth-Type privacyidea {
+            privacyidea
+        }
+    }
+    
+    # Post-authentication section
+    post-auth {
+        # Log successful authentications
+        linelog
+        
+        # Execute any post-auth scripts if needed
+        Post-Auth-Type REJECT {
+            # Log failed authentications
+            linelog
+        }
+    }
+    
+    # Pre-accounting section
+    preacct {
+        preprocess
+        acct_unique
+    }
+    
+    # Accounting section
+    accounting {
+        # Log accounting data
+        detail
+        unix
+        
+        # Store in SQL if configured
+        -sql
+    }
+}

@@ -1,0 +1,39 @@
+# PrivacyIDEA authentication module configuration
+# This module integrates FreeRADIUS with PrivacyIDEA for token validation
+
+python3 privacyidea {
+    # Path to the Python module
+    module = privacyidea_auth
+    
+    # Python path (if needed)
+    python_path = /usr/local/share/freeradius
+    
+    # Module configuration passed to Python
+    config {
+        # PrivacyIDEA server URL
+        privacyidea_url = ${PRIVACYIDEA_URL}
+        
+        # SSL certificate validation
+        validate_ssl = ${PRIVACYIDEA_VALIDATE_SSL}
+        
+        # Default realm (optional)
+        realm = ${PRIVACYIDEA_REALM}
+        
+        # Request timeout in seconds
+        timeout = 10
+        
+        # Enable debug logging
+        debug = ${PRIVACYIDEA_DEBUG}
+    }
+    
+    # FreeRADIUS module methods
+    mod_instantiate = ${.module}
+    mod_detach = ${.module}
+    mod_authorize = ${.module}
+    mod_authenticate = ${.module}
+    mod_preacct = ${.module}
+    mod_accounting = ${.module}
+    mod_pre_proxy = ${.module}
+    mod_post_proxy = ${.module}
+    mod_post_auth = ${.module}
+}
