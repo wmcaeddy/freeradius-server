@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  privacyidea-32bit:
+    build:
+      context: .
+      dockerfile: Dockerfile.privacyidea-32bit
+    ports:
+      - "5002:5002"
+    volumes:
+      - /opt/vasco:/opt/vasco:ro
+      - ./pi-default.cfg:/app/pi-default.cfg
+      - ./pi-default.db:/app/pi-default.db
+      - ./pi-default.log:/app/pi-default.log
+    environment:
+      - PRIVACYIDEA_CONFIGFILE=/app/pi-default.cfg
+    platform: linux/386
+    restart: unless-stopped
