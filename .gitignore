@@ -95,3 +95,26 @@ crash-*
 
 # Antora web site generation
 main-site.yml
+
+# Security - Never commit API keys or sensitive data
+**/google-services.json
+**/*api*key*
+**/*secret*
+**/credentials*
+**/token*
+*.key
+*.pem
+*.crt
+*.p12
+
+# Python virtual environments
+venv/
+env/
+ENV/
+privacyidea-env/
+privacyidea-32bit-env/
+pi-default/
+
+# Test data that might contain sensitive information
+**/testdata/google-services.json
+**/tests/testdata/*.json
