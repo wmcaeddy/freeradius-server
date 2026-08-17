@@ -331,12 +331,6 @@ unlang_action_t eap_aka_sim_process(unlang_result_t *p_result, module_ctx_t cons
 					&decode_ctx);
 
 		/*
-		 *	Only good for one response packet
-		 */
-		TALLOC_FREE(mod_session->response_hmac_extra);
-		mod_session->response_hmac_extra_len = 0;
-
-		/*
 		 *	RFC 4187 says we *MUST* notify, not just send
 		 *	an EAP-Failure in this case where we cannot
 		 *	decode an EAP-AKA packet.
@@ -431,6 +425,12 @@ unlang_action_t eap_aka_sim_process(unlang_result_t *p_result, module_ctx_t cons
 	}
 
 done:
+	/*
+	 *	Only good for one response packet.
+	 */
+	TALLOC_FREE(mod_session->response_hmac_extra);
+	mod_session->response_hmac_extra_len = 0;
+
 	/*
 	 *	Setup our encode function as the resumption
 	 *	frame when the state machine finishes with
