@@ -39,6 +39,8 @@ int		fr_pair_list_afrom_file(TALLOC_CTX *ctx, fr_dict_t const *dict,
 
 void		fr_pair_list_move_op(fr_pair_list_t *to, fr_pair_list_t *from, fr_token_t op);
 
+int		fr_pair_matches(fr_pair_t const *a, fr_pair_t const *b);
+
 typedef struct {
 	TALLOC_CTX		*ctx;
 	fr_dict_attr_t const	*da;		//!< root da to start parsing from

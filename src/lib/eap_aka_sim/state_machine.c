@@ -554,10 +554,16 @@ static int checkcode_validate(request_t *request)
 		 */
 		peer_checkcode = fr_pair_find_by_da(&request->request_pairs, NULL, attr_eap_aka_sim_checkcode);
 		if (peer_checkcode) {
-			if (fr_pair_cmp(peer_checkcode, our_checkcode) == 0) {
+			switch (fr_pair_cmp(peer_checkcode, our_checkcode)) {
+			case CMP_ERR:
+				RPEDEBUG("Failed comparing AT_CHECKCODE");
+				return -1;
+
+			case CMP_EQ:
 				RDEBUG2("Received AT_CHECKCODE matches calculated AT_CHECKCODE");
 				return 0;
-			} else {
+
+			default:
 				REDEBUG("Received AT_CHECKCODE does not match calculated AT_CHECKCODE");
 				RHEXDUMP_INLINE2(peer_checkcode->vp_octets, peer_checkcode->vp_length, "Received");
 				RHEXDUMP_INLINE2(our_checkcode->vp_octets, our_checkcode->vp_length, "Expected");
@@ -608,7 +614,15 @@ static int mac_validate(request_t *request)
 		return -1;
 	}
 
-	if (fr_pair_cmp(peer_mac, our_mac) != 0) {
+	switch (fr_pair_cmp(peer_mac, our_mac)) {
+	case CMP_ERR:
+		RPEDEBUG("Failed comparing AT_MAC");
+		return -1;
+
+	case CMP_EQ:
+		break;
+
+	default:
 		REDEBUG("Received AT_MAC does not match calculated AT_MAC");
 		RHEXDUMP_INLINE2(peer_mac->vp_octets, peer_mac->vp_length, "Received");
 		RHEXDUMP_INLINE2(our_mac->vp_octets, our_mac->vp_length, "Expected");

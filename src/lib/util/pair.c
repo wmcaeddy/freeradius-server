@@ -1958,85 +1958,38 @@ fr_cmp_ret_t fr_pair_cmp_by_parent_num(void const *a, void const *b)
 	return (da_a && !da_b) - (!da_a && da_b);
 }
 
-/** Compare two pairs, using the operator from "a"
+/** Compare two pairs by data, ignoring the operator on `a`.
  *
- *	i.e. given two attributes, it does:
+ * Ordering comparator suitable for use as a fr_cmp_t. Both pairs must have
+ * the same dictionary attribute; otherwise CMP_ERR is returned. The `op`
+ * field is not consulted, so freshly decoded pairs (default op T_OP_EQ)
+ * work the same as pairs with an explicit comparison operator.
  *
- *	(b->data) (a->operator) (a->data)
- *
- *	e.g. "foo" != "bar"
- *
- * @param[in] a the head attribute
- * @param[in] b the second attribute
+ * @param[in] a first attribute
+ * @param[in] b second attribute
  * @return
- *	- 1 if true.
- *	- 0 if false.
- *	- -1 on failure.
+ *	- CMP_LT if a < b.
+ *	- CMP_EQ if the two data are equal.
+ *	- CMP_GT if a > b.
+ *	- CMP_ERR if the pairs are not comparable, retrieve the error with fr_strerror.
  */
-int fr_pair_cmp(fr_pair_t const *a, fr_pair_t const *b)
+fr_cmp_ret_t fr_pair_cmp(fr_pair_t const *a, fr_pair_t const *b)
 {
-	if (!a) return -1;
-
-	PAIR_VERIFY(a);
-	if (b) PAIR_VERIFY(b);
-
-	switch (a->op) {
-	case T_OP_CMP_TRUE:
-		return (b != NULL);
-
-	case T_OP_CMP_FALSE:
-		return (b == NULL);
-
-		/*
-		 *	a is a regex, compile it, print b to a string,
-		 *	and then do string comparisons.
-		 */
-	case T_OP_REG_EQ:
-	case T_OP_REG_NE:
-#ifndef HAVE_REGEX
-		return -1;
-#else
-		if (!b) return false;
-
-		{
-			ssize_t	slen;
-			regex_t	*preg;
-			char	*value;
-
-			if (!fr_cond_assert(a->vp_type == FR_TYPE_STRING)) return -1;
-
-			slen = regex_compile(NULL, &preg, a->vp_strvalue, talloc_strlen(a->vp_strvalue),
-					     NULL, false, true);
-			if (slen <= 0) {
-				fr_strerror_printf_push("Error at offset %zd compiling regex for %s", -slen,
-							a->da->name);
-				return -1;
-			}
-			fr_pair_aprint(NULL, &value, NULL, b);
-			if (!value) {
-				talloc_free(preg);
-				return -1;
-			}
-
-			/*
-			 *	Don't care about substring matches, oh well...
-			 */
-			slen = regex_exec(preg, value, talloc_strlen(value), NULL);
-			talloc_free(preg);
-			talloc_free(value);
-
-			if (slen < 0) return -1;
-			if (a->op == T_OP_REG_EQ) return (int)slen;
-			return !slen;
-		}
-#endif
-
-	default:		/* we're OK */
-		if (!b) return false;
-		break;
+	if (!a || !b) {
+		fr_strerror_const("Cannot compare NULL pair");
+		return CMP_ERR;
 	}
 
-	return fr_pair_cmp_op(a->op, b, a);
+	PAIR_VERIFY(a);
+	PAIR_VERIFY(b);
+
+	if (a->da != b->da) {
+		fr_strerror_printf("Cannot compare pairs of different attributes: %s and %s",
+				   a->da->name, b->da->name);
+		return CMP_ERR;
+	}
+
+	return fr_value_box_cmp(&a->data, &b->data);
 }
 
 /** Determine equality of two lists
@@ -2119,7 +2072,7 @@ void fr_pair_validate_debug(fr_pair_t const *failed[2])
 	return;
 }
 
-/** Uses fr_pair_cmp to verify all fr_pair_ts in list match the filter defined by check
+/** Uses fr_pair_matches to verify all fr_pair_ts in list match the filter defined by check
  *
  * @note will sort both filter and list in place.
  *
@@ -2178,7 +2131,7 @@ bool fr_pair_validate(fr_pair_t const *failed[2], fr_pair_list_t *filter, fr_pai
 			/*
 			 *	This attribute passed the filter
 			 */
-			if (!fr_pair_cmp(check, match)) goto mismatch;
+			if (fr_pair_matches(check, match) != 1) goto mismatch;
 			break;
 		}
 
@@ -2196,7 +2149,7 @@ mismatch:
 	return false;
 }
 
-/** Uses fr_pair_cmp to verify all fr_pair_ts in list match the filter defined by check
+/** Uses fr_pair_matches to verify all fr_pair_ts in list match the filter defined by check
  *
  * @note will sort both filter and list in place.
  *
@@ -2257,7 +2210,7 @@ bool fr_pair_validate_relaxed(fr_pair_t const *failed[2], fr_pair_list_t *filter
 				/*
 				 *	This attribute passed the filter
 				 */
-				if (!fr_pair_cmp(check, match)) {
+				if (fr_pair_matches(check, match) != 1) {
 				mismatch:
 					if (failed) {
 						failed[0] = check;

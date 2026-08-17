@@ -667,12 +667,12 @@ fr_value_box_t	*fr_pair_dcursor_value_init(fr_dcursor_t *cursor) CC_HINT(nonnull
 
 fr_value_box_t	*fr_pair_dcursor_nested_init(fr_dcursor_t *cursor, fr_dcursor_t *parent) CC_HINT(nonnull);
 
-/** Compare two attributes using and operator.
+/** Evaluate the operator on `_a` with `_b` as the right-hand side.
  *
  * @return
- *	- 1 if equal.
- *	- 0 if not equal.
- *	- -1 on failure.
+ *	- 1 if the operator evaluates to true.
+ *	- 0 if the operator evaluates to false.
+ *	- -1 on error, retrieve the error with fr_strerror.
  */
 #define		fr_pair_cmp_op(_op, _a, _b)	fr_value_box_cmp_op(_op, &_a->data, &_b->data)
 
@@ -680,7 +680,7 @@ fr_cmp_ret_t	fr_pair_cmp_by_da(void const *a, void const *b);
 
 fr_cmp_ret_t	fr_pair_cmp_by_parent_num(void const *a, void const *b);
 
-int		fr_pair_cmp(fr_pair_t const *a, fr_pair_t const *b);
+fr_cmp_ret_t	fr_pair_cmp(fr_pair_t const *a, fr_pair_t const *b);
 
 fr_cmp_ret_t	fr_pair_list_cmp(fr_pair_list_t const *a, fr_pair_list_t const *b) CC_HINT(nonnull);
 

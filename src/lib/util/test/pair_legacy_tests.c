@@ -292,6 +292,48 @@ static void test_fr_pair_list_move_op(void)
 	fclose(fp);
 }
 
+static void test_fr_pair_matches(void)
+{
+	fr_pair_t *vp1, *vp2;
+
+	TEST_CASE("Create the vp1 'Test-Integer = 123'");
+	TEST_CHECK((vp1 = fr_pair_afrom_da(autofree, fr_dict_attr_test_uint32)) != NULL);
+
+	TEST_CASE("Validating PAIR_VERIFY()");
+	PAIR_VERIFY(vp1);
+
+	vp1->op = T_OP_EQ;
+	vp1->vp_uint32 = 123;
+
+	TEST_CASE("Create the vp2 'Test-Integer = 123'");
+	TEST_CHECK((vp2 = fr_pair_afrom_da(autofree, fr_dict_attr_test_uint32)) != NULL);
+
+	TEST_CASE("Validating PAIR_VERIFY()");
+	PAIR_VERIFY(vp2);
+
+	vp2->op = T_OP_EQ;
+	vp2->vp_uint32 = 123;
+
+	/*
+	 *	Regression for the EAP-AKA MAC/CHECKCODE validation bug: a
+	 *	pair fresh out of the RADIUS decoder has op = T_OP_EQ (`=`,
+	 *	assignment), not T_OP_CMP_EQ (`==`, comparison). The
+	 *	predicate must reject the operator rather than silently
+	 *	returning 0 ("false") which callers reading the return as
+	 *	bool interpret as a mismatch that never fires.
+	 */
+	TEST_CASE("fr_pair_matches() with T_OP_EQ (assignment) returns -1");
+	TEST_CHECK(fr_pair_matches(vp1, vp2) == -1);
+
+	vp1->op = T_OP_CMP_EQ;
+	TEST_CASE("fr_pair_matches() with T_OP_CMP_EQ + identical values returns 1");
+	TEST_CHECK(fr_pair_matches(vp1, vp2) == 1);
+
+	vp2->vp_uint32 = 321;
+	TEST_CASE("fr_pair_matches() with T_OP_CMP_EQ + different values returns 0");
+	TEST_CHECK(fr_pair_matches(vp1, vp2) == 0);
+}
+
 TEST_LIST = {
 	/*
 	 *	Legacy calls
@@ -300,6 +342,7 @@ TEST_LIST = {
 	{ "fr_pair_list_afrom_substr_exec", test_fr_pair_list_afrom_substr_exec },
 	{ "fr_pair_list_afrom_file", test_fr_pair_list_afrom_file },
 	{ "fr_pair_list_move_op",       test_fr_pair_list_move_op },
+	{ "fr_pair_matches",		test_fr_pair_matches },
 
 	TEST_TERMINATOR
 };

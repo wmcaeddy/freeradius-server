@@ -410,7 +410,15 @@ int restore_field(request_t *request, fr_pair_t **to_restore)
 
 	vp = fr_pair_find_by_da(&request->reply_pairs, NULL, (*to_restore)->da);
 	if (vp) {
-		if (fr_pair_cmp(vp, *to_restore) != 0) {
+		switch (fr_pair_cmp(vp, *to_restore)) {
+		case CMP_ERR:
+			RPEDEBUG("Failed comparing reply.%pP to request.%pP", vp, *to_restore);
+			goto free;
+
+		case CMP_EQ:
+			break;
+
+		default:
 			RWDEBUG("reply.%pP does not match request.%pP", vp, *to_restore);
 		free:
 			talloc_free(*to_restore);

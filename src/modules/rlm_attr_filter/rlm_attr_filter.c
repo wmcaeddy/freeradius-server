@@ -97,8 +97,8 @@ static void check_pair(request_t *request, fr_pair_t *check_item, fr_pair_t *rep
 
 	if (check_item->op == T_OP_SET) return;
 
-	compare = fr_pair_cmp(check_item, reply_item);
-	if (compare < 0) RPEDEBUG("Comparison failed");
+	compare = fr_pair_matches(check_item, reply_item);
+	if (unlikely(compare < 0)) RPEDEBUG("Comparison failed");
 
 	if (compare == 1) {
 		++*(pass);

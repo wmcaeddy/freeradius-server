@@ -1146,7 +1146,12 @@ int fr_value_box_cmp_op(fr_token_t op, fr_value_box_t const *a, fr_value_box_t c
 	}
 
 	/*
-	 *	Now do the operator comparison.
+	 *	Now do the operator comparison. Only comparison operators
+	 *	are valid here; assignment operators (=, :=, +=, ...) must
+	 *	be rejected explicitly, otherwise a freshly decoded pair
+	 *	(default op T_OP_EQ) silently reads as "false" and callers
+	 *	relying on the predicate for security checks (e.g. AT_MAC
+	 *	in EAP-AKA) never see the mismatch.
 	 */
 	switch (op) {
 	case T_OP_CMP_EQ:
@@ -1168,7 +1173,9 @@ int fr_value_box_cmp_op(fr_token_t op, fr_value_box_t const *a, fr_value_box_t c
 		return (compare >= 0);
 
 	default:
-		return 0;
+		fr_strerror_printf("%s: operator %s is not a comparison operator",
+				   __FUNCTION__, fr_tokens[op]);
+		return -1;
 	}
 }
 

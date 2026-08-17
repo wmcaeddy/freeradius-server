@@ -204,8 +204,8 @@ static void test_fr_pair_copy(void)
 
 	vp->op = T_OP_CMP_EQ;
 
-	TEST_CASE("Compare fr_pair_cmp(copy == vp) should be TRUE");
-	TEST_CHECK(fr_pair_cmp(vp, copy) == 1);
+	TEST_CASE("Compare fr_pair_cmp(copy, vp) should be CMP_EQ");
+	TEST_CHECK(fr_pair_cmp(vp, copy) == CMP_EQ);
 
 	talloc_free(vp);
 	talloc_free(copy);
@@ -664,8 +664,25 @@ static void test_fr_pair_cmp(void)
 	vp2->op = T_OP_CMP_EQ;
 	vp2->vp_uint32 = 321;
 
-	TEST_CASE("Compare fr_pair_cmp(vp1 == vp2) should be FALSE");
-	TEST_CHECK(fr_pair_cmp(vp1, vp2) == 0);
+	/*
+	 *	fr_pair_cmp() is an ordering comparator that ignores the
+	 *	operator. 123 < 321.
+	 */
+	TEST_CASE("fr_pair_cmp(vp1, vp2) with vp1 < vp2 returns CMP_LT");
+	TEST_CHECK(fr_pair_cmp(vp1, vp2) == CMP_LT);
+
+	TEST_CASE("fr_pair_cmp(vp2, vp1) with vp2 > vp1 returns CMP_GT");
+	TEST_CHECK(fr_pair_cmp(vp2, vp1) == CMP_GT);
+
+	/*
+	 *	Regression for the EAP-AKA MAC/CHECKCODE validation bug: a
+	 *	pair fresh out of the RADIUS decoder has op = T_OP_EQ (`=`),
+	 *	not T_OP_CMP_EQ (`==`). fr_pair_cmp() ignores op entirely,
+	 *	so identical bytes still compare CMP_EQ.
+	 */
+	vp2->vp_uint32 = 123;
+	TEST_CASE("fr_pair_cmp() with T_OP_EQ + identical values returns CMP_EQ");
+	TEST_CHECK(fr_pair_cmp(vp1, vp2) == CMP_EQ);
 }
 
 static void test_fr_pair_list_cmp(void)

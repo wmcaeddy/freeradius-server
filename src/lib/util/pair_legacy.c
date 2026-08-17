@@ -1466,3 +1466,88 @@ void fr_pair_list_move_op(fr_pair_list_t *to, fr_pair_list_t *from, fr_token_t o
 
 	fr_pair_list_free(from);
 }
+
+/** Evaluate `a->op` with `b` as the right-hand side.
+ *
+ *	i.e. given two attributes, it does:
+ *
+ *	(b->data) (a->operator) (a->data)
+ *
+ *	e.g. "foo" != "bar"
+ *
+ * Predicate function, distinct from the ordering comparator fr_pair_cmp().
+ * The `op` on `a` selects the comparison; passing a pair with an
+ * assignment-style op (`=`, `:=`, etc.) is an error.
+ *
+ * @param[in] a the head attribute
+ * @param[in] b the second attribute
+ * @return
+ *	- 1 if the operator evaluates to true.
+ *	- 0 if the operator evaluates to false.
+ *	- -1 on error, retrieve the error with fr_strerror.
+ */
+int fr_pair_matches(fr_pair_t const *a, fr_pair_t const *b)
+{
+	if (!a) return -1;
+
+	PAIR_VERIFY(a);
+	if (b) PAIR_VERIFY(b);
+
+	switch (a->op) {
+	case T_OP_CMP_TRUE:
+		return (b != NULL);
+
+	case T_OP_CMP_FALSE:
+		return (b == NULL);
+
+		/*
+		 *	a is a regex, compile it, print b to a string,
+		 *	and then do string comparisons.
+		 */
+	case T_OP_REG_EQ:
+	case T_OP_REG_NE:
+#ifndef HAVE_REGEX
+		return -1;
+#else
+		if (!b) return false;
+
+		{
+			ssize_t	slen;
+			regex_t	*preg;
+			char	*value;
+
+			if (!fr_cond_assert(a->vp_type == FR_TYPE_STRING)) return -1;
+
+			slen = regex_compile(NULL, &preg, a->vp_strvalue, talloc_strlen(a->vp_strvalue),
+					     NULL, false, true);
+			if (slen <= 0) {
+				fr_strerror_printf_push("Error at offset %zd compiling regex for %s", -slen,
+							a->da->name);
+				return -1;
+			}
+			fr_pair_aprint(NULL, &value, NULL, b);
+			if (!value) {
+				talloc_free(preg);
+				return -1;
+			}
+
+			/*
+			 *	Don't care about substring matches, oh well...
+			 */
+			slen = regex_exec(preg, value, talloc_strlen(value), NULL);
+			talloc_free(preg);
+			talloc_free(value);
+
+			if (slen < 0) return -1;
+			if (a->op == T_OP_REG_EQ) return (int)slen;
+			return !slen;
+		}
+#endif
+
+	default:		/* we're OK */
+		if (!b) return false;
+		break;
+	}
+
+	return fr_pair_cmp_op(a->op, b, a);
+}
