@@ -193,7 +193,7 @@ static inline bool is_worker_thread(fr_worker_t const *worker)
 	return (pthread_equal(pthread_self(), worker->thread_id) != 0);
 }
 
-static void worker_request_bootstrap(fr_worker_t *worker, fr_channel_data_t *cd, fr_time_t now);
+static void worker_request_bootstrap(fr_worker_channel_t *wc, fr_channel_data_t *cd, fr_time_t now);
 static void worker_send_reply(fr_worker_t *worker, request_t *request, bool do_not_respond, fr_time_t now);
 
 /** Callback which handles a message being received on the worker side.
@@ -210,15 +210,15 @@ static void worker_recv_request(fr_channel_t *ch, fr_channel_data_t *cd, void *u
 	worker->stats.in++;
 	DEBUG3("Received request %" PRIu64 "", worker->stats.in);
 	cd->channel.ch = ch;
-	worker_request_bootstrap(worker, cd, fr_time());
+	worker_request_bootstrap(wc, cd, fr_time());
 }
 
 static void worker_requests_cancel(fr_worker_channel_t *ch)
 {
-	request_t *request;
+	fr_async_t *async;
 
-	while ((request = fr_dlist_pop_head(&ch->dlist)) != NULL) {
-		unlang_interpret_signal(request, FR_SIGNAL_CANCEL);
+	while ((async = fr_dlist_pop_head(&ch->dlist)) != NULL) {
+		unlang_interpret_signal(async->request, FR_SIGNAL_CANCEL);
 	}
 }
 
@@ -770,6 +770,7 @@ void worker_request_init(fr_worker_t *worker, request_t *request, fr_time_t now)
 
 	request->packet->timestamp = now;
 	request->async = talloc_zero(request, fr_async_t);
+	request->async->request = request;
 	request->async->recv_time = now;
 	request->async->el = worker->el;
 	fr_dlist_entry_init(&request->async->entry);
@@ -794,8 +795,9 @@ static int _worker_request_deinit(request_t *request, UNUSED void *uctx)
 	return request_slab_deinit(request);
 }
 
-static void worker_request_bootstrap(fr_worker_t *worker, fr_channel_data_t *cd, fr_time_t now)
+static void worker_request_bootstrap(fr_worker_channel_t *wc, fr_channel_data_t *cd, fr_time_t now)
 {
+	fr_worker_t		*worker = wc->worker;
 	int			ret = -1;
 	request_t		*request;
 	fr_listen_t		*listen = cd->listen;
@@ -827,7 +829,8 @@ static void worker_request_bootstrap(fr_worker_t *worker, fr_channel_data_t *cd,
 	 *	Have to initialise the request manually because namspace
 	 *	changes based on the listener that allocated it.
 	 */
-	if (request_init(request, REQUEST_TYPE_EXTERNAL, (&(request_init_args_t){ .namespace = listen->dict })) < 0) {
+	if (request_init(request, REQUEST_TYPE_EXTERNAL,
+			 (&(request_init_args_t){ .namespace = listen->dict })) < 0) {
 		request_slab_release(request);
 		goto nak;
 	}
@@ -980,6 +983,13 @@ static void worker_request_bootstrap(fr_worker_t *worker, fr_channel_data_t *cd,
 
 		fr_dlist_insert_tail(&wl->dlist, request);
 	}
+
+	/*
+	 *	Track this request against the channel it came in on so
+	 *	worker_requests_cancel() has something to walk when the
+	 *	network signals CHANNEL_CLOSE.
+	 */
+	fr_dlist_insert_tail(&wc->dlist, request->async);
 }
 
 /**
