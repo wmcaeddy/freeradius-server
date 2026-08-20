@@ -1,4 +1,7 @@
 scripts/docker/build/
 scripts/docker/m4/
 doc/
-
+privacyidea-32bit-env/
+privacyidea-env/
+web-otp-test/
+.git/
