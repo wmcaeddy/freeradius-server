@@ -60,7 +60,7 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Write daloRADIUS configuration for MDB2 / mysqli
+# Write daloRADIUS configuration for PHP 7.4 + mysqli driver
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     cat << 'CONF' > "$DALO_CONF"
 <?php

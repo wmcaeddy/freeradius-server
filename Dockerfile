@@ -18,14 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     php-xml \
     php-zip \
     php-pear \
-    php-db \
     git \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install MDB2 and MDB2_Driver_mysqli
-RUN pear install MDB2 MDB2_Driver_mysqli || true
+# Install PEAR DB package
+RUN pear install DB || true
 
 # Clone daloRADIUS master branch into web root
 RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
