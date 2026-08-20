@@ -20,15 +20,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone daloRADIUS master branch into web root
+# Clone daloRADIUS into web root
 RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
     ( [ -f /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template ] && cp /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template /var/www/html/daloradius/app/common/includes/daloradius.conf.php || true ) && \
     ( [ -f /var/www/html/daloradius/library/daloradius.conf.php.template ] && cp /var/www/html/daloradius/library/daloradius.conf.php.template /var/www/html/daloradius/library/daloradius.conf.php || true ) && \
     chown -R www-data:www-data /var/www/html/daloradius
 
-# Create Apache redirect from /daloradius to index.php
-RUN echo '<Directory /var/www/html/daloradius>\n DirectoryIndex index.php login.php\n Options -Indexes +FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
+# Create Apache config with DirectoryIndex and ServerName
+RUN echo 'ServerName localhost\n<Directory /var/www/html/daloradius>\n DirectoryIndex index.php login.php\n Options -Indexes +FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
     a2enconf daloradius
+
+# Set Apache default document root redirect to /daloradius
+RUN echo '<?php header("Location: /daloradius/app/common/action/login.php"); exit; ?>' > /var/www/html/index.php
 
 # Create data directories
 RUN mkdir -p /app/data /etc/freeradius/3.0 && \

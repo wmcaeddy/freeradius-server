@@ -14,7 +14,7 @@ for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); d
 done
 
 echo "Starting Apache for daloRADIUS Web Admin UI..."
-service apache2 start || apache2ctl start
+apache2ctl start
 
 echo "Starting FreeRADIUS service..."
 exec freeradius -f -l stdout
