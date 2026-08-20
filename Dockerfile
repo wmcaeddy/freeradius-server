@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install FreeRADIUS, PHP, Apache/Nginx, git, and required extensions for daloRADIUS
+# Install FreeRADIUS, PHP, Apache, git, and required extensions for daloRADIUS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     freeradius \
     freeradius-mysql \
@@ -20,9 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone daloRADIUS into web root
+# Clone daloRADIUS into web root and prepare sample config
 RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
-    cp /var/www/html/daloradius/library/daloradius.conf.php.template /var/www/html/daloradius/library/daloradius.conf.php && \
+    ( [ -f /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template ] && cp /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template /var/www/html/daloradius/app/common/includes/daloradius.conf.php || cp /var/www/html/daloradius/library/daloradius.conf.php.template /var/www/html/daloradius/library/daloradius.conf.php || touch /var/www/html/daloradius/daloradius.conf.php ) && \
     chown -R www-data:www-data /var/www/html/daloradius
 
 # Create data directories
