@@ -58,21 +58,21 @@ PHP_INI=$(php -i | grep "Loaded Configuration File" | awk '{print $NF}')
 if [ -f "$PHP_INI" ]; then
     sed -i "s/display_errors = .*/display_errors = On/" "$PHP_INI"
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
-    sed -i "s/error_reporting = .*/error_reporting = E_ALL/" "$PHP_INI"
+    sed -i "s/error_reporting = .*/error_reporting = E_ALL \& ~E_DEPRECATED \& ~E_STRICT/" "$PHP_INI"
 fi
 
-# Write full daloRADIUS config with DB_ENGINE = pdo
+# Write full daloRADIUS config using DB_ENGINE = mysqli
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     cat << 'CONF' > "$DALO_CONF"
 <?php
-$configValues['CONFIG_DB_ENGINE'] = 'pdo';
-$configValues['CONFIG_DB_TYPE'] = 'mysql';
+$configValues['CONFIG_DB_ENGINE'] = 'mysqli';
+$configValues['CONFIG_DB_TYPE'] = 'mysqli';
 $configValues['CONFIG_DB_HOST'] = '127.0.0.1';
 $configValues['CONFIG_DB_PORT'] = '3306';
 $configValues['CONFIG_DB_USER'] = 'radius';
 $configValues['CONFIG_DB_PASS'] = 'radius';
 $configValues['CONFIG_DB_NAME'] = 'radius';
-$configValues['DB_TYPE'] = 'mysql';
+$configValues['DB_TYPE'] = 'mysqli';
 $configValues['DB_HOST'] = '127.0.0.1';
 $configValues['DB_PORT'] = '3306';
 $configValues['DB_USER'] = 'radius';
@@ -80,13 +80,8 @@ $configValues['DB_PASS'] = 'radius';
 $configValues['DB_NAME'] = 'radius';
 $configValues['CONFIG_FILE_DALORADIUS_VERSION'] = '1.3';
 $configValues['CONFIG_MAINT_TEST_USER'] = 'administrator';
-$configValues['CONFIG_LOG_FILE'] = '/tmp/daloradius.log';
 CONF
 done
-
-# Ensure apache error logging captures PHP output
-echo "ErrorLog /dev/stderr" >> /etc/apache2/apache2.conf
-echo "TransferLog /dev/stdout" >> /etc/apache2/apache2.conf
 
 echo "Starting Apache for daloRADIUS Web Admin UI..."
 apache2ctl start
