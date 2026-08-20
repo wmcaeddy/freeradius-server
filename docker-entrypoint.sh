@@ -44,11 +44,11 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Write full daloRADIUS config with DB_TYPE = mysql (PEAR DB engine)
+# Write full daloRADIUS config using PDO / mysqli
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     cat << 'CONF' > "$DALO_CONF"
 <?php
-$configValues['CONFIG_DB_ENGINE'] = 'mysql';
+$configValues['CONFIG_DB_ENGINE'] = 'pdo';
 $configValues['CONFIG_DB_TYPE'] = 'mysql';
 $configValues['CONFIG_DB_HOST'] = '127.0.0.1';
 $configValues['CONFIG_DB_PORT'] = '3306';
@@ -61,7 +61,7 @@ $configValues['DB_PORT'] = '3306';
 $configValues['DB_USER'] = 'radius';
 $configValues['DB_PASS'] = 'radius';
 $configValues['DB_NAME'] = 'radius';
-$configValues['CONFIG_FILE_DALORADIUS_VERSION'] = '1.3-master';
+$configValues['CONFIG_FILE_DALORADIUS_VERSION'] = '1.3';
 $configValues['CONFIG_MAINT_TEST_USER'] = 'administrator';
 CONF
 done
