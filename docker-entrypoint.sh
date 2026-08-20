@@ -18,11 +18,19 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     mysql -e "GRANT ALL PRIVILEGES ON radius.* TO 'radius'@'localhost';" || true
     mysql -e "FLUSH PRIVILEGES;" || true
 
-    # Import daloRADIUS & FreeRADIUS schema files if present
-    SCHEMA_SQL=$(find /var/www/html/daloradius -name "*.sql" | head -n 1)
-    if [ -n "$SCHEMA_SQL" ]; then
-        mysql radius < "$SCHEMA_SQL" || true
+    # Import FreeRADIUS base schema then daloRADIUS schema in correct order
+    FR_SCHEMA=$(find /etc/freeradius/3.0 -name "schema.sql" | head -n 1)
+    if [ -z "$FR_SCHEMA" ]; then
+        FR_SCHEMA=$(find /etc/freeradius -name "schema.sql" | head -n 1)
     fi
+    if [ -n "$FR_SCHEMA" ]; then
+        mysql radius < "$FR_SCHEMA" || true
+    fi
+
+    # Import daloRADIUS tables
+    for SQL_FILE in $(find /var/www/html/daloradius -name "*.sql" | sort); do
+        mysql radius < "$SQL_FILE" || true
+    done
 fi
 
 # Enable PHP display_errors and log errors
@@ -32,9 +40,10 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Configure all daloRADIUS config files
+# Configure all daloRADIUS config files with DB type 'mysqli'
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
-    sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '${MYSQL_HOST:-localhost}';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_ENGINE'\] = .*/\$configValues\['CONFIG_DB_ENGINE'\] = 'mysqli';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '${MYSQL_HOST:-127.0.0.1}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_PORT'\] = .*/\$configValues\['CONFIG_DB_PORT'\] = '${MYSQL_PORT:-3306}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_USER'\] = .*/\$configValues\['CONFIG_DB_USER'\] = '${MYSQL_USER:-radius}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = .*/\$configValues\['CONFIG_DB_PASS'\] = '${MYSQL_PASSWORD:-radius}';/" "$DALO_CONF"
