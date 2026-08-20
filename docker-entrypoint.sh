@@ -52,6 +52,12 @@ for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); d
     sed -i "s/\$configValues\['CONFIG_DB_USER'\] = .*/\$configValues\['CONFIG_DB_USER'\] = '${MYSQL_USER:-radius}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = .*/\$configValues\['CONFIG_DB_PASS'\] = '${MYSQL_PASSWORD:-radius}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_NAME'\] = .*/\$configValues\['CONFIG_DB_NAME'\] = '${MYSQL_DATABASE:-radius}';/" "$DALO_CONF"
+    
+    # Also patch legacy daloradius.conf.php keys if present
+    sed -i "s/\$configValues\['DB_HOST'\] = .*/\$configValues\['DB_HOST'\] = '127.0.0.1';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['DB_USER'\] = .*/\$configValues\['DB_USER'\] = '${MYSQL_USER:-radius}';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['DB_PASS'\] = .*/\$configValues\['DB_PASS'\] = '${MYSQL_PASSWORD:-radius}';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['DB_NAME'\] = .*/\$configValues\['DB_NAME'\] = '${MYSQL_DATABASE:-radius}';/" "$DALO_CONF"
 done
 
 echo "Starting Apache for daloRADIUS Web Admin UI..."
