@@ -49,8 +49,8 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         mysql -f radius < "$DICT_SCHEMA" || true
     fi
 
-    # 3. Create default daloRADIUS administrator operator user if operators table is empty
-    mysql radius -e "INSERT IGNORE INTO operators (id, username, password, firstname, lastname, title, department, company, phone1, phone2, email1, email2, messenger1, messenger2, notes, createdate, createby, updatedate, updateby) VALUES (1, 'administrator', 'radius', 'Administrator', 'User', 'System Administrator', 'IT', 'Company', '', '', '', '', '', '', '', NOW(), 'installer', NOW(), 'installer');" || true
+    # 3. Create default daloRADIUS administrator operator user with exact operators table schema
+    mysql radius -e "INSERT IGNORE INTO operators (id, username, password, firstname, lastname, title, department, company, phone1, phone2, email1, email2, messenger1, messenger2, notes) VALUES (1, 'administrator', 'radius', 'Administrator', 'User', 'System Administrator', 'IT', 'Company', '', '', '', '', '', '', '');" || true
 fi
 
 # Enable PHP display_errors and log errors
