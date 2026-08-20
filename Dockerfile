@@ -23,14 +23,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PEAR DB package and MDB2 drivers
-RUN pear install DB || true && \
-    pear install MDB2 || true && \
-    pear install MDB2_Driver_mysqli || true && \
-    pear install MDB2_Driver_mysql || true
+# Install PEAR DB package
+RUN pear install DB || true
 
-# Clone daloRADIUS master branch into web root
-RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
+# Clone daloRADIUS 1.2 stable branch into web root
+RUN git clone --branch 1.2 --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
     ( [ -f /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template ] && cp /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template /var/www/html/daloradius/app/common/includes/daloradius.conf.php || true ) && \
     ( [ -f /var/www/html/daloradius/library/daloradius.conf.php.template ] && cp /var/www/html/daloradius/library/daloradius.conf.php.template /var/www/html/daloradius/library/daloradius.conf.php || true ) && \
     chown -R www-data:www-data /var/www/html/daloradius && \
