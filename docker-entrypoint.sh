@@ -60,19 +60,20 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Configure daloRADIUS config with mysqli driver and explicit socket path
+# Configure daloRADIUS config with mysqli driver and localhost TCP port
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     cat << 'CONF' > "$DALO_CONF"
 <?php
 $configValues['CONFIG_DB_ENGINE'] = 'mysqli';
 $configValues['CONFIG_DB_TYPE'] = 'mysqli';
-$configValues['CONFIG_DB_HOST'] = 'localhost:/var/run/mysqld/mysqld.sock';
+$configValues['CONFIG_DB_HOST'] = '127.0.0.1';
 $configValues['CONFIG_DB_PORT'] = '3306';
 $configValues['CONFIG_DB_USER'] = 'radius';
 $configValues['CONFIG_DB_PASS'] = 'radius';
 $configValues['CONFIG_DB_NAME'] = 'radius';
+$configValues['DB_ENGINE'] = 'mysqli';
 $configValues['DB_TYPE'] = 'mysqli';
-$configValues['DB_HOST'] = 'localhost:/var/run/mysqld/mysqld.sock';
+$configValues['DB_HOST'] = '127.0.0.1';
 $configValues['DB_PORT'] = '3306';
 $configValues['DB_USER'] = 'radius';
 $configValues['DB_PASS'] = 'radius';
