@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install FreeRADIUS, PHP, Apache, MariaDB/MySQL server, git, and required extensions for daloRADIUS
+# Install FreeRADIUS, PHP, Apache, MariaDB, git, and required extensions for daloRADIUS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     freeradius \
     freeradius-mysql \
@@ -18,11 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     php-xml \
     php-zip \
     php-pear \
-    php-db \
     git \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Install MDB2 and MDB2_Driver_mysqli (modern daloRADIUS DB abstraction)
+RUN pear install MDB2 MDB2_Driver_mysqli || true
 
 # Clone daloRADIUS into web root
 RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
