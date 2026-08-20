@@ -20,7 +20,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     mysql -e "GRANT ALL PRIVILEGES ON radius.* TO 'radius'@'127.0.0.1';" || true
     mysql -e "FLUSH PRIVILEGES;" || true
 
-    # Import FreeRADIUS base schema
+    # Import FreeRADIUS base schema for MySQL
     FR_SCHEMA=$(find /etc/freeradius/3.0 -path "*/mysql/schema.sql" | head -n 1)
     if [ -z "$FR_SCHEMA" ]; then
         FR_SCHEMA=$(find /etc/freeradius -path "*/mysql/schema.sql" | head -n 1)
@@ -30,8 +30,8 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         mysql radius < "$FR_SCHEMA" || true
     fi
 
-    # Import daloRADIUS tables
-    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -name "*.sql" | sort); do
+    # Import ONLY MariaDB/MySQL specific daloRADIUS tables
+    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -name "mariadb*.sql" -o -name "fr3-mariadb*.sql" | sort); do
         echo "Importing daloRADIUS schema from $SQL_FILE..."
         mysql radius < "$SQL_FILE" || true
     done
@@ -44,7 +44,7 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Write full daloRADIUS config using PDO / mysqli
+# Write full daloRADIUS config with DB_ENGINE = pdo
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     cat << 'CONF' > "$DALO_CONF"
 <?php
