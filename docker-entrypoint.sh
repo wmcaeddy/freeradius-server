@@ -22,7 +22,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
 
     # Import FreeRADIUS base schema
     FR_SCHEMA=$(find /etc/freeradius/3.0 -path "*/mysql/schema.sql" | head -n 1)
-    if [ -z "$MYSQL_SCHEMA" ]; then
+    if [ -z "$FR_SCHEMA" ]; then
         FR_SCHEMA=$(find /etc/freeradius -path "*/mysql/schema.sql" | head -n 1)
     fi
     if [ -n "$FR_SCHEMA" ]; then
@@ -31,7 +31,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     fi
 
     # Import daloRADIUS tables
-    for SQL_FILE in $(find /var/www/html/daloradius -name "*.sql" | sort); do
+    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -name "*.sql" | sort); do
         echo "Importing daloRADIUS schema from $SQL_FILE..."
         mysql radius < "$SQL_FILE" || true
     done
@@ -47,7 +47,7 @@ fi
 # Configure all daloRADIUS config files with DB type 'mysqli'
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     sed -i "s/\$configValues\['CONFIG_DB_ENGINE'\] = .*/\$configValues\['CONFIG_DB_ENGINE'\] = 'mysqli';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '${MYSQL_HOST:-localhost}';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '127.0.0.1';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_PORT'\] = .*/\$configValues\['CONFIG_DB_PORT'\] = '${MYSQL_PORT:-3306}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_USER'\] = .*/\$configValues\['CONFIG_DB_USER'\] = '${MYSQL_USER:-radius}';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = .*/\$configValues\['CONFIG_DB_PASS'\] = '${MYSQL_PASSWORD:-radius}';/" "$DALO_CONF"
