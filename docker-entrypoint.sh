@@ -49,7 +49,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         mysql -f radius < "$DICT_SCHEMA" || true
     fi
 
-    # 3. Create default daloRADIUS administrator operator user with exact operators table schema
+    # 3. Create default daloRADIUS administrator operator user
     mysql radius -e "INSERT IGNORE INTO operators (id, username, password, firstname, lastname, title, department, company, phone1, phone2, email1, email2, messenger1, messenger2, notes) VALUES (1, 'administrator', 'radius', 'Administrator', 'User', 'System Administrator', 'IT', 'Company', '', '', '', '', '', '', '');" || true
 fi
 
@@ -58,6 +58,7 @@ PHP_INI=$(php -i | grep "Loaded Configuration File" | awk '{print $NF}')
 if [ -f "$PHP_INI" ]; then
     sed -i "s/display_errors = .*/display_errors = On/" "$PHP_INI"
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
+    sed -i "s/error_reporting = .*/error_reporting = E_ALL/" "$PHP_INI"
 fi
 
 # Write full daloRADIUS config with DB_ENGINE = pdo
@@ -79,8 +80,13 @@ $configValues['DB_PASS'] = 'radius';
 $configValues['DB_NAME'] = 'radius';
 $configValues['CONFIG_FILE_DALORADIUS_VERSION'] = '1.3';
 $configValues['CONFIG_MAINT_TEST_USER'] = 'administrator';
+$configValues['CONFIG_LOG_FILE'] = '/tmp/daloradius.log';
 CONF
 done
+
+# Ensure apache error logging captures PHP output
+echo "ErrorLog /dev/stderr" >> /etc/apache2/apache2.conf
+echo "TransferLog /dev/stdout" >> /etc/apache2/apache2.conf
 
 echo "Starting Apache for daloRADIUS Web Admin UI..."
 apache2ctl start
