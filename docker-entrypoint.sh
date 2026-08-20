@@ -44,20 +44,24 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Configure all daloRADIUS config files with DB type 'mysqli'
+# Overwrite daloRADIUS config directly with clean working config file
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
-    sed -i "s/\$configValues\['CONFIG_DB_ENGINE'\] = .*/\$configValues\['CONFIG_DB_ENGINE'\] = 'mysqli';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '127.0.0.1';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['CONFIG_DB_PORT'\] = .*/\$configValues\['CONFIG_DB_PORT'\] = '${MYSQL_PORT:-3306}';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['CONFIG_DB_USER'\] = .*/\$configValues\['CONFIG_DB_USER'\] = '${MYSQL_USER:-radius}';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = .*/\$configValues\['CONFIG_DB_PASS'\] = '${MYSQL_PASSWORD:-radius}';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['CONFIG_DB_NAME'\] = .*/\$configValues\['CONFIG_DB_NAME'\] = '${MYSQL_DATABASE:-radius}';/" "$DALO_CONF"
-    
-    # Also patch legacy daloradius.conf.php keys if present
-    sed -i "s/\$configValues\['DB_HOST'\] = .*/\$configValues\['DB_HOST'\] = '127.0.0.1';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['DB_USER'\] = .*/\$configValues\['DB_USER'\] = '${MYSQL_USER:-radius}';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['DB_PASS'\] = .*/\$configValues\['DB_PASS'\] = '${MYSQL_PASSWORD:-radius}';/" "$DALO_CONF"
-    sed -i "s/\$configValues\['DB_NAME'\] = .*/\$configValues\['DB_NAME'\] = '${MYSQL_DATABASE:-radius}';/" "$DALO_CONF"
+    cat << 'CONF' > "$DALO_CONF"
+<?php
+$configValues['CONFIG_DB_ENGINE'] = 'mysqli';
+$configValues['CONFIG_DB_HOST'] = '127.0.0.1';
+$configValues['CONFIG_DB_PORT'] = '3306';
+$configValues['CONFIG_DB_USER'] = 'radius';
+$configValues['CONFIG_DB_PASS'] = 'radius';
+$configValues['CONFIG_DB_NAME'] = 'radius';
+$configValues['DB_HOST'] = '127.0.0.1';
+$configValues['DB_PORT'] = '3306';
+$configValues['DB_USER'] = 'radius';
+$configValues['DB_PASS'] = 'radius';
+$configValues['DB_NAME'] = 'radius';
+$configValues['CONFIG_FILE_DALORADIUS_VERSION'] = '1.3-master';
+$configValues['CONFIG_MAINT_TEST_USER'] = 'administrator';
+CONF
 done
 
 echo "Starting Apache for daloRADIUS Web Admin UI..."
