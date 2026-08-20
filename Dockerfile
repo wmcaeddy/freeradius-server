@@ -24,16 +24,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone daloRADIUS into web root
+# Install MDB2 and MDB2_Driver_mysqli
+RUN pear install MDB2 MDB2_Driver_mysqli || true
+
+# Clone daloRADIUS master branch into web root
 RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
     ( [ -f /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template ] && cp /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template /var/www/html/daloradius/app/common/includes/daloradius.conf.php || true ) && \
     ( [ -f /var/www/html/daloradius/library/daloradius.conf.php.template ] && cp /var/www/html/daloradius/library/daloradius.conf.php.template /var/www/html/daloradius/library/daloradius.conf.php || true ) && \
     chown -R www-data:www-data /var/www/html/daloradius && \
     chmod -R 755 /var/www/html/daloradius
 
-# Create Apache config with DirectoryIndex and global permissions
-RUN echo 'ServerName localhost\n<Directory /var/www/html>\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>\n<Directory /var/www/html/daloradius>\n DirectoryIndex login.php index.php\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
+# Create Apache config pointing DirectoryIndex directly to daloRADIUS login
+RUN echo 'ServerName localhost\n<Directory /var/www/html>\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>\n<Directory /var/www/html/daloradius>\n DirectoryIndex app/users/login.php login.php index.php\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
     a2enconf daloradius
+
+# Redirect root daloradius request directly to login page
+RUN echo '<?php header("Location: /daloradius/app/users/login.php"); exit; ?>' > /var/www/html/daloradius/index.php
+RUN echo '<?php header("Location: /daloradius/app/users/login.php"); exit; ?>' > /var/www/html/index.php
 
 # Create data directories
 RUN mkdir -p /app/data /etc/freeradius/3.0 && \
