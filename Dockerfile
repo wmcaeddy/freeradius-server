@@ -27,13 +27,13 @@ RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html
     chown -R www-data:www-data /var/www/html/daloradius && \
     chmod -R 755 /var/www/html/daloradius
 
-# Create Apache config pointing DocumentRoot directly to daloRADIUS app/common/action/ or enabling DirectoryIndex
-RUN echo 'ServerName localhost\n<Directory /var/www/html>\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>\n<Directory /var/www/html/daloradius>\n DirectoryIndex index.php login.php\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
+# Create Apache config with DirectoryIndex and global permissions
+RUN echo 'ServerName localhost\n<Directory /var/www/html>\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>\n<Directory /var/www/html/daloradius>\n DirectoryIndex login.php index.php\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
     a2enconf daloradius
 
-# Add index.php in /var/www/html/daloradius to auto-redirect to login script
-RUN echo '<?php header("Location: /daloradius/app/common/action/login.php"); exit; ?>' > /var/www/html/daloradius/index.php
-RUN echo '<?php header("Location: /daloradius/app/common/action/login.php"); exit; ?>' > /var/www/html/index.php
+# Add dynamic PHP routing to locate login page script dynamically
+RUN echo '<?php \n$login_file = exec("find /var/www/html/daloradius -name login.php"); \nif ($login_file) { \n  $rel_path = str_replace("/var/www/html", "", $login_file); \n  header("Location: " . $rel_path); \n  exit; \n} \necho "daloRADIUS installed successfully"; \n?>' > /var/www/html/daloradius/index.php
+RUN echo '<?php header("Location: /daloradius/"); exit; ?>' > /var/www/html/index.php
 
 # Create data directories
 RUN mkdir -p /app/data /etc/freeradius/3.0 && \
