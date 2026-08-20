@@ -23,18 +23,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PEAR DB package
-RUN pear install DB || true
+# Install PEAR DB package and MDB2 drivers
+RUN pear install DB || true && \
+    pear install MDB2 || true && \
+    pear install MDB2_Driver_mysqli || true && \
+    pear install MDB2_Driver_mysql || true
 
-# Clone daloRADIUS 1.2 stable branch into web root
-RUN git clone --branch 1.2 --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
+# Clone daloRADIUS master branch into web root
+RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
     ( [ -f /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template ] && cp /var/www/html/daloradius/app/common/includes/daloradius.conf.php.template /var/www/html/daloradius/app/common/includes/daloradius.conf.php || true ) && \
     ( [ -f /var/www/html/daloradius/library/daloradius.conf.php.template ] && cp /var/www/html/daloradius/library/daloradius.conf.php.template /var/www/html/daloradius/library/daloradius.conf.php || true ) && \
     chown -R www-data:www-data /var/www/html/daloradius && \
     chmod -R 755 /var/www/html/daloradius
 
-# Create Apache config with DirectoryIndex pointing to login.php
-RUN echo 'ServerName localhost\n<Directory /var/www/html>\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>\n<Directory /var/www/html/daloradius>\n DirectoryIndex login.php index.php\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
+# Create Apache config with DirectoryIndex pointing to app/operators/login.php
+RUN echo 'ServerName localhost\n<Directory /var/www/html>\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>\n<Directory /var/www/html/daloradius>\n DirectoryIndex app/operators/login.php index.php\n Options Indexes FollowSymLinks\n AllowOverride All\n Require all granted\n</Directory>' > /etc/apache2/conf-available/daloradius.conf && \
     a2enconf daloradius
 
 # Create data directories

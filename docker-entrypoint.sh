@@ -68,7 +68,7 @@ if [ -n "$CONF_TEMPLATE" ]; then
 fi
 
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
-    sed -i "s/\$configValues\['CONFIG_DB_ENGINE'\] = .*/\$configValues\['CONFIG_DB_ENGINE'\] = 'mysql';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_ENGINE'\] = .*/\$configValues\['CONFIG_DB_ENGINE'\] = 'mysqli';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '127.0.0.1';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_USER'\] = .*/\$configValues\['CONFIG_DB_USER'\] = 'radius';/" "$DALO_CONF"
     sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = .*/\$configValues\['CONFIG_DB_PASS'\] = 'radius';/" "$DALO_CONF"
