@@ -3,11 +3,12 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install FreeRADIUS, PHP 8.1, Apache, git, and required extensions for daloRADIUS
+# Install FreeRADIUS, PHP, Apache, MariaDB/MySQL server, git, and required extensions for daloRADIUS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     freeradius \
     freeradius-mysql \
     freeradius-utils \
+    mariadb-server \
     apache2 \
     php \
     php-mysql \
@@ -22,9 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
-# Install PEAR DB package required by legacy daloRADIUS DB layer if missing
-RUN pear install DB || true
 
 # Clone daloRADIUS into web root
 RUN git clone --depth 1 https://github.com/lirantal/daloradius.git /var/www/html/daloradius && \
