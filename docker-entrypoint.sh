@@ -30,11 +30,14 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         mysql radius < "$FR_SCHEMA" || true
     fi
 
-    # Import ONLY MariaDB/MySQL specific daloRADIUS tables (ignore pgsql)
-    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -maxdepth 1 -type f -name "*mariadb*.sql" -o -name "*mysql*.sql" | grep -v "pgsql" | sort); do
-        echo "Importing daloRADIUS schema from $SQL_FILE..."
-        mysql radius < "$SQL_FILE" || true
-    done
+    # Import ONLY canonical daloRADIUS base schema files (mariadb-daloradius.sql & fr3-mariadb-freeradius.sql)
+    MAIN_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "mariadb-daloradius.sql" | head -n 1)
+    FR3_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "fr3-mariadb-freeradius.sql" | head -n 1)
+    DICT_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "mariadb-daloradius-dictionaries.sql" | head -n 1)
+    
+    [ -n "$FR3_SCHEMA" ] && mysql radius < "$FR3_SCHEMA" || true
+    [ -n "$MAIN_SCHEMA" ] && mysql radius < "$MAIN_SCHEMA" || true
+    [ -n "$DICT_SCHEMA" ] && mysql radius < "$DICT_SCHEMA" || true
 fi
 
 # Enable PHP display_errors and log errors
