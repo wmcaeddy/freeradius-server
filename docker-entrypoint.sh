@@ -60,27 +60,19 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/display_startup_errors = .*/display_startup_errors = On/" "$PHP_INI"
 fi
 
-# Configure daloRADIUS config with mysqli driver and localhost TCP port
+# Copy daloRADIUS conf template directly and update keys safely
+CONF_TEMPLATE=$(find /var/www/html/daloradius -name "daloradius.conf.php.template" | head -n 1)
+if [ -n "$CONF_TEMPLATE" ]; then
+    cp "$CONF_TEMPLATE" /var/www/html/daloradius/app/common/includes/daloradius.conf.php || true
+    cp "$CONF_TEMPLATE" /var/www/html/daloradius/library/daloradius.conf.php || true
+fi
+
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
-    cat << 'CONF' > "$DALO_CONF"
-<?php
-$configValues['CONFIG_DB_ENGINE'] = 'mysqli';
-$configValues['CONFIG_DB_TYPE'] = 'mysqli';
-$configValues['CONFIG_DB_HOST'] = '127.0.0.1';
-$configValues['CONFIG_DB_PORT'] = '3306';
-$configValues['CONFIG_DB_USER'] = 'radius';
-$configValues['CONFIG_DB_PASS'] = 'radius';
-$configValues['CONFIG_DB_NAME'] = 'radius';
-$configValues['DB_ENGINE'] = 'mysqli';
-$configValues['DB_TYPE'] = 'mysqli';
-$configValues['DB_HOST'] = '127.0.0.1';
-$configValues['DB_PORT'] = '3306';
-$configValues['DB_USER'] = 'radius';
-$configValues['DB_PASS'] = 'radius';
-$configValues['DB_NAME'] = 'radius';
-$configValues['CONFIG_FILE_DALORADIUS_VERSION'] = '1.3-master';
-$configValues['CONFIG_MAINT_TEST_USER'] = 'administrator';
-CONF
+    sed -i "s/\$configValues\['CONFIG_DB_ENGINE'\] = .*/\$configValues\['CONFIG_DB_ENGINE'\] = 'mysqli';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_HOST'\] = .*/\$configValues\['CONFIG_DB_HOST'\] = '127.0.0.1';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_USER'\] = .*/\$configValues\['CONFIG_DB_USER'\] = 'radius';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = .*/\$configValues\['CONFIG_DB_PASS'\] = 'radius';/" "$DALO_CONF"
+    sed -i "s/\$configValues\['CONFIG_DB_NAME'\] = .*/\$configValues\['CONFIG_DB_NAME'\] = 'radius';/" "$DALO_CONF"
 done
 
 echo "Starting Apache for daloRADIUS Web Admin UI..."
