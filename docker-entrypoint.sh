@@ -30,8 +30,8 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         mysql radius < "$FR_SCHEMA" || true
     fi
 
-    # Import ONLY MariaDB/MySQL specific daloRADIUS tables
-    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -name "mariadb*.sql" -o -name "fr3-mariadb*.sql" | sort); do
+    # Import daloRADIUS tables
+    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -maxdepth 1 -name "*.sql" | sort); do
         echo "Importing daloRADIUS schema from $SQL_FILE..."
         mysql radius < "$SQL_FILE" || true
     done
