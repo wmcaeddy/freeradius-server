@@ -20,7 +20,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     mysql -e "GRANT ALL PRIVILEGES ON radius.* TO 'radius'@'127.0.0.1';" || true
     mysql -e "FLUSH PRIVILEGES;" || true
 
-    # 1. Import FreeRADIUS base SQL schema (creates radgroupcheck, radacct, etc.)
+    # 1. Import FreeRADIUS base SQL schema
     FR_SCHEMA=$(find /etc/freeradius/3.0 -path "*/mysql/schema.sql" | head -n 1)
     if [ -z "$FR_SCHEMA" ]; then
         FR_SCHEMA=$(find /etc/freeradius -path "*/mysql/schema.sql" | head -n 1)
@@ -30,7 +30,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         mysql radius < "$FR_SCHEMA" || true
     fi
 
-    # 2. Import daloRADIUS tables with --force to ignore duplicate table warnings
+    # 2. Import daloRADIUS tables
     MAIN_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "mariadb-daloradius.sql" | head -n 1)
     if [ -z "$MAIN_SCHEMA" ]; then
         MAIN_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "mysql-daloradius.sql" | head -n 1)
@@ -48,6 +48,9 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
         echo "Importing daloRADIUS dictionary schema from $DICT_SCHEMA..."
         mysql -f radius < "$DICT_SCHEMA" || true
     fi
+
+    # 3. Create default daloRADIUS administrator operator user if operators table is empty
+    mysql radius -e "INSERT IGNORE INTO operators (id, username, password, firstname, lastname, title, department, company, phone1, phone2, email1, email2, messenger1, messenger2, notes, createdate, createby, updatedate, updateby) VALUES (1, 'administrator', 'radius', 'Administrator', 'User', 'System Administrator', 'IT', 'Company', '', '', '', '', '', '', '', NOW(), 'installer', NOW(), 'installer');" || true
 fi
 
 # Enable PHP display_errors and log errors
