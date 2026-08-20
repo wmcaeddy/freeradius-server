@@ -18,13 +18,13 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     mysql -e "GRANT ALL PRIVILEGES ON radius.* TO 'radius'@'localhost';" || true
     mysql -e "FLUSH PRIVILEGES;" || true
 
-    # Import FreeRADIUS base schema then daloRADIUS schema in correct order
-    FR_SCHEMA=$(find /etc/freeradius/3.0 -name "schema.sql" | head -n 1)
-    if [ -z "$FR_SCHEMA" ]; then
-        FR_SCHEMA=$(find /etc/freeradius -name "schema.sql" | head -n 1)
+    # Find MySQL-specific FreeRADIUS schema
+    MYSQL_SCHEMA=$(find /etc/freeradius/3.0 -path "*/mysql/schema.sql" | head -n 1)
+    if [ -z "$MYSQL_SCHEMA" ]; then
+        MYSQL_SCHEMA=$(find /etc/freeradius -path "*/mysql/schema.sql" | head -n 1)
     fi
-    if [ -n "$FR_SCHEMA" ]; then
-        mysql radius < "$FR_SCHEMA" || true
+    if [ -n "$MYSQL_SCHEMA" ]; then
+        mysql radius < "$MYSQL_SCHEMA" || true
     fi
 
     # Import daloRADIUS tables
