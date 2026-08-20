@@ -31,7 +31,7 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     fi
 
     # Import canonical daloRADIUS tables
-    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -type f -name "mariadb*.sql" -o -name "fr3-mariadb*.sql" | grep -v "pgsql" | sort); do
+    for SQL_FILE in $(find /var/www/html/daloradius/contrib/db -type f \( -name "*mariadb*.sql" -o -name "*mysql*.sql" \) ! -name "*pgsql*" | sort); do
         echo "Importing daloRADIUS schema from $SQL_FILE..."
         mysql radius < "$SQL_FILE" || true
     done
