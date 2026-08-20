@@ -61,18 +61,18 @@ if [ -f "$PHP_INI" ]; then
     sed -i "s/error_reporting = .*/error_reporting = E_ALL \& ~E_DEPRECATED \& ~E_STRICT/" "$PHP_INI"
 fi
 
-# Write full daloRADIUS config using DB_ENGINE = mysqli
+# Write daloRADIUS configuration for PHP 7.4 + PEAR DB
 for DALO_CONF in $(find /var/www/html/daloradius -name "daloradius.conf.php"); do
     cat << 'CONF' > "$DALO_CONF"
 <?php
-$configValues['CONFIG_DB_ENGINE'] = 'mysqli';
-$configValues['CONFIG_DB_TYPE'] = 'mysqli';
+$configValues['CONFIG_DB_ENGINE'] = 'mysql';
+$configValues['CONFIG_DB_TYPE'] = 'mysql';
 $configValues['CONFIG_DB_HOST'] = '127.0.0.1';
 $configValues['CONFIG_DB_PORT'] = '3306';
 $configValues['CONFIG_DB_USER'] = 'radius';
 $configValues['CONFIG_DB_PASS'] = 'radius';
 $configValues['CONFIG_DB_NAME'] = 'radius';
-$configValues['DB_TYPE'] = 'mysqli';
+$configValues['DB_TYPE'] = 'mysql';
 $configValues['DB_HOST'] = '127.0.0.1';
 $configValues['DB_PORT'] = '3306';
 $configValues['DB_USER'] = 'radius';
