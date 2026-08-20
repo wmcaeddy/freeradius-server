@@ -20,7 +20,17 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
     mysql -e "GRANT ALL PRIVILEGES ON radius.* TO 'radius'@'127.0.0.1';" || true
     mysql -e "FLUSH PRIVILEGES;" || true
 
-    # Import canonical daloRADIUS tables ONLY (includes all required RADIUS tables)
+    # 1. Import FreeRADIUS base SQL schema (creates radgroupcheck, radacct, etc.)
+    FR_SCHEMA=$(find /etc/freeradius/3.0 -path "*/mysql/schema.sql" | head -n 1)
+    if [ -z "$FR_SCHEMA" ]; then
+        FR_SCHEMA=$(find /etc/freeradius -path "*/mysql/schema.sql" | head -n 1)
+    fi
+    if [ -n "$FR_SCHEMA" ]; then
+        echo "Importing base FreeRADIUS schema from $FR_SCHEMA..."
+        mysql radius < "$FR_SCHEMA" || true
+    fi
+
+    # 2. Import daloRADIUS tables with --force to ignore duplicate table warnings
     MAIN_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "mariadb-daloradius.sql" | head -n 1)
     if [ -z "$MAIN_SCHEMA" ]; then
         MAIN_SCHEMA=$(find /var/www/html/daloradius/contrib/db -name "mysql-daloradius.sql" | head -n 1)
@@ -32,11 +42,11 @@ if [ -z "$MYSQL_HOST" ] || [ "$MYSQL_HOST" = "localhost" ] || [ "$MYSQL_HOST" = 
 
     if [ -n "$MAIN_SCHEMA" ]; then
         echo "Importing daloRADIUS primary schema from $MAIN_SCHEMA..."
-        mysql radius < "$MAIN_SCHEMA" || true
+        mysql -f radius < "$MAIN_SCHEMA" || true
     fi
     if [ -n "$DICT_SCHEMA" ]; then
         echo "Importing daloRADIUS dictionary schema from $DICT_SCHEMA..."
-        mysql radius < "$DICT_SCHEMA" || true
+        mysql -f radius < "$DICT_SCHEMA" || true
     fi
 fi
 
